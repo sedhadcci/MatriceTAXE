@@ -9,18 +9,18 @@ st.title("Optimisation d'affectation de la taxe d'apprentissage")
 uploaded_file = st.file_uploader("Téléchargez votre fichier Excel", type=["xlsx"])
 
 if uploaded_file:
-    # Read Excel file into a DataFrame
-    df = pd.read_excel(uploaded_file)
-    
+    # Read Excel file into a DataFrame, specifying dtype for SIRET columns
+    df = pd.read_excel(uploaded_file, dtype={'SIRET ENTREPRISE': str, 'SIRET ETABLISSEMENT': str})
+
     # Check for column existence
     if all(col in df.columns for col in ['SIRET ENTREPRISE', 'TA SOLDE PAIE', 'SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER']):
-    
         # Sort dataframes
         df_enterprises = df[['SIRET ENTREPRISE', 'TA SOLDE PAIE']].drop_duplicates().sort_values(by='TA SOLDE PAIE', ascending=False)
         df_schools = df[['SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER']].drop_duplicates().sort_values(by='MONTANT A ATTRIBUER', ascending=False)
 
-        # Create an empty DataFrame for the matrix
-        matrix_df = pd.DataFrame(index=df_schools['SIRET ETABLISSEMENT'].values, columns=df_enterprises['SIRET ENTREPRISE'].values)
+        # Create an empty DataFrame for the matrix, converting SIRET to str
+        matrix_df = pd.DataFrame(index=df_schools['SIRET ETABLISSEMENT'].astype(str).values,
+                                 columns=df_enterprises['SIRET ENTREPRISE'].astype(str).values)
         matrix_df.fillna(0, inplace=True)
 
         for index_e, row_e in df_enterprises.iterrows():
@@ -45,6 +45,5 @@ if uploaded_file:
 
         st.write("Matrice d'affectation :")
         st.write(matrix_df)
-        
     else:
         st.error("Le fichier Excel doit contenir les colonnes 'SIRET ENTREPRISE', 'TA SOLDE PAIE', 'SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER'.")
