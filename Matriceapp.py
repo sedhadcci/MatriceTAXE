@@ -26,10 +26,10 @@ uploaded_file = st.file_uploader("Téléchargez votre fichier Excel", type=["xls
 
 if uploaded_file:
     # Read Excel file into a DataFrame, specifying dtype for SIRET columns
-    df = pd.read_excel(uploaded_file, dtype={'SIRET ENTREPRISE': str, 'SIRET ETABLISSEMENT': str})
+    df = pd.read_excel(uploaded_file, dtype={'SIRET ENTREPRISE': str, 'SIRET ETABLISSEMENT': str, '30%': str})
 
-    if all(col in df.columns for col in ['SIRET ENTREPRISE', 'TA SOLDE PAIE', 'SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER', '30%']):
-        
+    required_cols = ['SIRET ENTREPRISE', 'TA SOLDE PAIE', 'SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER', '30%']
+    if all(col in df.columns for col in required_cols):
         df_enterprises = df[['SIRET ENTREPRISE', 'TA SOLDE PAIE']].drop_duplicates().sort_values(by='TA SOLDE PAIE', ascending=False)
         df_schools = df[['SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER', '30%']].drop_duplicates().sort_values(by='MONTANT A ATTRIBUER', ascending=False)
 
@@ -40,22 +40,22 @@ if uploaded_file:
         matrix_df.loc['Montant total TA SOLDE PAIE'] = df_enterprises['TA SOLDE PAIE'].values
 
         for index_e, row_e in df_enterprises.iterrows():
-                remaining_amount_e = row_e['TA SOLDE PAIE']
+            remaining_amount_e = row_e['TA SOLDE PAIE']
 
-                for index_s, row_s in df_schools.iterrows():
-                    remaining_amount_s = row_s['MONTANT A ATTRIBUER']
-                    is_30_percent = not pd.isna(row_s['30%'])
+            for index_s, row_s in df_schools.iterrows():
+                remaining_amount_s = row_s['MONTANT A ATTRIBUER']
+                is_30_percent = not pd.isna(row_s['30%'])
 
-                    if remaining_amount_e == 0:
-                        break
+                if remaining_amount_e == 0:
+                    break
 
-                    if remaining_amount_s == 0:
-                        continue
+                if remaining_amount_s == 0:
+                    continue
 
-                    if is_30_percent:
-                        attrib_amount = min(remaining_amount_e, remaining_amount_s, int(0.3 * row_e['TA SOLDE PAIE']))
-                    else:
-                        attrib_amount = min(remaining_amount_e, remaining_amount_s)
+                if is_30_percent:
+                    attrib_amount = min(remaining_amount_e, remaining_amount_s, int(0.3 * row_e['TA SOLDE PAIE']))
+                else:
+                    attrib_amount = min(remaining_amount_e, remaining_amount_s)
 
                 remaining_amount_e -= attrib_amount
                 df_schools.at[index_s, 'MONTANT A ATTRIBUER'] -= attrib_amount
@@ -84,6 +84,5 @@ if uploaded_file:
         st.write("Matrice d'affectation avec pourcentage :")
         st.write(matrix_df)
         st.markdown(get_table_download_link(matrix_df), unsafe_allow_html=True)
-
     else:
-            st.error("Le fichier Excel doit contenir les colonnes 'SIRET ENTREPRISE', 'TA SOLDE PAIE', 'SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER' et '30%'.")
+        st.error("Le fichier Excel doit contenir les colonnes 'SIRET ENTREPRISE', 'TA SOLDE PAIE', 'SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER' et '30%'.")
