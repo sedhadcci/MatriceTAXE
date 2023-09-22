@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 
 # Streamlit app setup
 st.title("Optimisation d'affectation de la taxe d'apprentissage")
@@ -12,39 +11,43 @@ if uploaded_file:
     # Read Excel file into a DataFrame
     df = pd.read_excel(uploaded_file)
     
-    # Check for column existence
-    if all(col in df.columns for col in ['SIRET ENTREPRISE', 'TA SOLDE PAIE', 'SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER']):
+    # Show uploaded data
+    st.write("Données uploadées :")
+    st.write(df)
     
-        # Sort dataframes
-        df_enterprises = df[['SIRET ENTREPRISE', 'TA SOLDE PAIE']].drop_duplicates().sort_values(by='TA SOLDE PAIE', ascending=False)
-        df_schools = df[['SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER']].drop_duplicates().sort_values(by='MONTANT A ATTRIBUER', ascending=False)
-
-        # Create an empty DataFrame for the matrix
-        matrix_df = pd.DataFrame(index=df_schools['SIRET ETABLISSEMENT'].values, columns=df_enterprises['SIRET ENTREPRISE'].values)
-        matrix_df.fillna(0, inplace=True)
-
-        for index_e, row_e in df_enterprises.iterrows():
-            remaining_amount_e = row_e['TA SOLDE PAIE']
-
-            for index_s, row_s in df_schools.iterrows():
-                remaining_amount_s = row_s['MONTANT A ATTRIBUER']
-
-                if remaining_amount_e == 0:
-                    break
-
-                if remaining_amount_s == 0:
-                    continue
-
-                # Calculate the amount to be attributed
-                attrib_amount = min(remaining_amount_e, remaining_amount_s)
-
-                # Update remaining amounts and the matrix
-                remaining_amount_e -= attrib_amount
-                df_schools.at[index_s, 'MONTANT A ATTRIBUER'] -= attrib_amount
-                matrix_df.at[row_s['SIRET ETABLISSEMENT'], row_e['SIRET ENTREPRISE']] = attrib_amount
-
-        st.write("Matrice d'affectation :")
-        st.write(matrix_df)
+    # Sort dataframes
+    df_enterprises = df[['SIRET ENTREPRISE', 'TA SOLDE PAIE']].drop_duplicates().sort_values(by='TA SOLDE PAIE', ascending=False)
+    df_schools = df[['SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER']].drop_duplicates().sort_values(by='MONTANT A ATTRIBUER', ascending=False)
+    
+    # Initialize results list
+    results = []
+    
+    for index_e, row_e in df_enterprises.iterrows():
+        remaining_amount_e = row_e['TA SOLDE PAIE']
         
-    else:
-        st.error("Le fichier Excel doit contenir les colonnes 'SIRET ENTREPRISE', 'TA SOLDE PAIE', 'SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER'.")
+        for index_s, row_s in df_schools.iterrows():
+            remaining_amount_s = row_s['MONTANT A ATTRIBUER']
+            
+            if remaining_amount_e == 0:
+                break
+            
+            if remaining_amount_s == 0:
+                continue
+            
+            # Calculate the amount to be attributed
+            attrib_amount = min(remaining_amount_e, remaining_amount_s)
+            
+            # Update remaining amounts
+            remaining_amount_e -= attrib_amount
+            df_schools.at[index_s, 'MONTANT A ATTRIBUER'] -= attrib_amount
+            
+            # Store the result
+            results.append({
+                'SIRET ENTREPRISE': row_e['SIRET ENTREPRISE'],
+                'SIRET ETABLISSEMENT': row_s['SIRET ETABLISSEMENT'],
+                'MONTANT ATTRIBUE': attrib_amount
+            })
+    
+    # Display results
+    st.write("Résultats de l'optimisation :")
+    st.write(pd.DataFrame(results))
