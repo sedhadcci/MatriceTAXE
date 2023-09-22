@@ -19,9 +19,11 @@ if uploaded_file:
         df_schools = df[['SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER']].drop_duplicates().sort_values(by='MONTANT A ATTRIBUER', ascending=False)
 
         # Create an empty DataFrame for the matrix, converting SIRET to str
-        matrix_df = pd.DataFrame(index=df_schools['SIRET ETABLISSEMENT'].astype(str).values,
+        matrix_df = pd.DataFrame(index=['Montant total TA SOLDE PAIE', 'Reste à affecter'] + df_schools['SIRET ETABLISSEMENT'].astype(str).tolist(),
                                  columns=df_enterprises['SIRET ENTREPRISE'].astype(str).values)
         matrix_df.fillna(0, inplace=True)
+
+        matrix_df.loc['Montant total TA SOLDE PAIE'] = df_enterprises['TA SOLDE PAIE'].values
 
         for index_e, row_e in df_enterprises.iterrows():
             remaining_amount_e = row_e['TA SOLDE PAIE']
@@ -42,6 +44,9 @@ if uploaded_file:
                 remaining_amount_e -= attrib_amount
                 df_schools.at[index_s, 'MONTANT A ATTRIBUER'] -= attrib_amount
                 matrix_df.at[row_s['SIRET ETABLISSEMENT'], row_e['SIRET ENTREPRISE']] = attrib_amount
+
+        # Fill the "Reste à affecter" row
+            matrix_df.at['Reste à affecter', row_e['SIRET ENTREPRISE']] = remaining_amount_e
 
         st.write("Matrice d'affectation :")
         st.write(matrix_df)
