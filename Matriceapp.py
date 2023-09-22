@@ -56,7 +56,7 @@ if uploaded_file:
             if total_amount == 0:
                 matrix_df[percentage_col_name] = 0
             else:
-                matrix_df[percentage_col_name] = (matrix_df[col] / total_amount) * 100.round(8)
+                matrix_df[percentage_col_name] = (matrix_df[col] / total_amount * 100).round(8)
 
         # Reorder columns so that each SIRET Entreprise column is followed by its corresponding percentage column
         new_columns_order = []
