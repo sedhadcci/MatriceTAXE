@@ -73,6 +73,8 @@ if uploaded_file:
             new_columns_order.append(f"{col} (%)")
 
         matrix_df = matrix_df[new_columns_order]
+        
+        matrix_df.replace(0, None, inplace=True)
 
         st.write("Matrice d'affectation avec pourcentage :")
         st.write(matrix_df)
