@@ -45,10 +45,29 @@ if uploaded_file:
                 df_schools.at[index_s, 'MONTANT A ATTRIBUER'] -= attrib_amount
                 matrix_df.at[row_s['SIRET ETABLISSEMENT'], row_e['SIRET ENTREPRISE']] = attrib_amount
 
-        # Fill the "Reste à affecter" row
+            # Fill the "Reste à affecter" row
             matrix_df.at['Reste à affecter', row_e['SIRET ENTREPRISE']] = remaining_amount_e
 
-        st.write("Matrice d'affectation :")
+        # Add percentage columns for each SIRET Entreprise
+        for col in df_enterprises['SIRET ENTREPRISE'].astype(str):
+            total_amount = matrix_df.loc['Montant total TA SOLDE PAIE', col]
+            percentage_col_name = f"{col} (%)"
+
+            if total_amount == 0:
+                matrix_df[percentage_col_name] = 0
+            else:
+                matrix_df[percentage_col_name] = (matrix_df[col] / total_amount) * 100
+
+        # Reorder columns so that each SIRET Entreprise column is followed by its corresponding percentage column
+        new_columns_order = []
+        for col in df_enterprises['SIRET ENTREPRISE'].astype(str):
+            new_columns_order.append(col)
+            new_columns_order.append(f"{col} (%)")
+
+        matrix_df = matrix_df[new_columns_order]
+
+        st.write("Matrice d'affectation avec pourcentage :")
         st.write(matrix_df)
+
     else:
         st.error("Le fichier Excel doit contenir les colonnes 'SIRET ENTREPRISE', 'TA SOLDE PAIE', 'SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER'.")
