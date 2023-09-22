@@ -19,9 +19,14 @@ if uploaded_file:
         df_schools = df[['SIRET ETABLISSEMENT', 'MONTANT A ATTRIBUER']].drop_duplicates().sort_values(by='MONTANT A ATTRIBUER', ascending=False)
 
         # Create an empty DataFrame for the matrix, converting SIRET to str
-        matrix_df = pd.DataFrame(index=df_schools['SIRET ETABLISSEMENT'].astype(str).values,
-                                 columns=df_enterprises['SIRET ENTREPRISE'].astype(str).values)
-        matrix_df.fillna(0, inplace=True)
+matrix_df = pd.DataFrame(index=['Montant Initial', 'Reste à Affecter'] + list(df_schools['SIRET ETABLISSEMENT'].astype(str).values),
+                         columns=df_enterprises['SIRET ENTREPRISE'].astype(str).values)
+matrix_df.fillna(0, inplace=True)
+
+# Initialize the "Montant Initial" and "Reste à Affecter" rows with the TA SOLDE PAIE amounts
+initial_amounts = df_enterprises.set_index('SIRET ENTREPRISE')['TA SOLDE PAIE'].to_dict()
+matrix_df.loc['Montant Initial'] = initial_amounts
+matrix_df.loc['Reste à Affecter'] = initial_amounts
 
         for index_e, row_e in df_enterprises.iterrows():
             remaining_amount_e = row_e['TA SOLDE PAIE']
